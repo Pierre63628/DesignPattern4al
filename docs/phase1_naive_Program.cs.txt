@@ -1,0 +1,282 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+// =====================================================================
+//  PROJET DESIGN PATTERNS - Usine de drones
+//  PHASE 1 : Implementation naive (proof of concept).
+//
+//  On repond simplement au sujet, sans reflechir aux design patterns.
+//  Tout est fait "a la main" : donnees en dur, gros switch sur la
+//  commande, parsing des arguments inline. Ce sera refactore en phase 2.
+// =====================================================================
+
+class Program
+{
+    // -----------------------------------------------------------------
+    //  DONNEES EN DUR (section 4.2 du sujet)
+    // -----------------------------------------------------------------
+
+    // Definition d'un drone : ses 5 pieces + le systeme installe sur le core.
+    class Drone
+    {
+        public string Name;
+        public string Hull;       // coque
+        public string Core;       // module principal
+        public string System;     // systeme installe sur le core
+        public string Generator;  // generateur
+        public string Move;       // module de deplacement
+        public string Processor;  // module de controle
+    }
+
+    // Catalogue des drones que l'usine sait produire.
+    static readonly Dictionary<string, Drone> Drones = new()
+    {
+        ["DXF-1"] = new Drone { Name = "DXF-1", Hull = "Hull_HF1", Core = "Core_C3D1", System = "System_S3D1", Generator = "Generator_GF1", Move = "Move_MF1", Processor = "Processor_P3D1" },
+        ["RDL-1"] = new Drone { Name = "RDL-1", Hull = "Hull_HG1", Core = "Core_CG1", System = "System_SG1", Generator = "Generator_GG1", Move = "Move_ML1", Processor = "Processor_PG1" },
+        ["WDS-1"] = new Drone { Name = "WDS-1", Hull = "Hull_HS1", Core = "Core_C3D1", System = "System_S3D1", Generator = "Generator_GS1", Move = "Move_MS1", Processor = "Processor_P3D1" },
+        ["DYM-1"] = new Drone { Name = "DYM-1", Hull = "Hull_HG1", Core = "Core_CG1", System = "System_SG1", Generator = "Generator_GG1", Move = "Move_MM1", Processor = "Processor_PG1" },
+    };
+
+    // Stock disponible. Le sujet ne donne pas de quantites initiales,
+    // on part donc sur une valeur arbitraire pour pouvoir tester.
+    // Les drones finis commencent a 0, les pieces/systemes a 5.
+    static readonly Dictionary<string, int> Stock = new();
+
+    static void InitStock()
+    {
+        string[] pieces =
+        {
+            "Hull_HG1", "Hull_HF1", "Hull_HS1",
+            "Core_CG1", "Core_C3D1",
+            "Generator_GG1", "Generator_GF1", "Generator_GS1",
+            "Move_MF1", "Move_ML1", "Move_MS1", "Move_MM1",
+            "Processor_PG1", "Processor_P3D1",
+            "System_SG1", "System_S3D1",
+        };
+        foreach (var p in pieces) Stock[p] = 5;
+        foreach (var d in Drones.Keys) Stock[d] = 0;
+    }
+
+    // Liste des pieces (+ systeme) consommees pour produire UN drone.
+    static List<string> PiecesForDrone(Drone d)
+        => new() { d.Hull, d.Core, d.Generator, d.Move, d.Processor, d.System };
+
+    // -----------------------------------------------------------------
+    //  BOUCLE PRINCIPALE (REPL)
+    // -----------------------------------------------------------------
+    static void Main()
+    {
+        InitStock();
+        Console.WriteLine("Usine de drones - tapez une instruction (EXIT pour quitter).");
+
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            line = line.Trim();
+            if (line.Length == 0) continue;
+            if (line.Equals("EXIT", StringComparison.OrdinalIgnoreCase)) break;
+
+            // On separe le mot-cle de la commande du reste (les ARGS).
+            int sp = line.IndexOf(' ');
+            string command = sp < 0 ? line : line.Substring(0, sp);
+            string args = sp < 0 ? "" : line.Substring(sp + 1).Trim();
+
+            switch (command)
+            {
+                case "STOCKS":         DoStocks(); break;
+                case "NEEDED_STOCKS":  DoNeededStocks(args); break;
+                case "INSTRUCTIONS":   DoInstructions(args); break;
+                case "VERIFY":         DoVerify(args); break;
+                case "PRODUCE":        DoProduce(args); break;
+                default:
+                    Console.WriteLine($"ERROR `{command}` is not a recognized instruction");
+                    break;
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------
+    //  PARSING DES ARGS : "2 DXF-1, 1 RDL-1"  ->  { DXF-1:2, RDL-1:1 }
+    //  Les doublons sont additionnes (3.1 du sujet).
+    //  Retourne null et remplit 'error' si quelque chose ne va pas.
+    // -----------------------------------------------------------------
+    static Dictionary<string, int> ParseArgs(string args, out string error)
+    {
+        error = null;
+        var result = new Dictionary<string, int>();
+
+        if (string.IsNullOrWhiteSpace(args))
+        {
+            error = "no command provided";
+            return null;
+        }
+
+        foreach (var raw in args.Split(','))
+        {
+            var part = raw.Trim();
+            if (part.Length == 0) continue;
+
+            var tokens = part.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (tokens.Length != 2)
+            {
+                error = $"`{part}` is not a valid quantity/drone pair";
+                return null;
+            }
+
+            if (!int.TryParse(tokens[0], out int qty) || qty <= 0)
+            {
+                error = $"`{tokens[0]}` is not a valid quantity";
+                return null;
+            }
+
+            string drone = tokens[1];
+            if (!Drones.ContainsKey(drone))
+            {
+                error = $"`{drone}` is not a recognized drone";
+                return null;
+            }
+
+            if (result.ContainsKey(drone)) result[drone] += qty;
+            else result[drone] = qty;
+        }
+
+        if (result.Count == 0)
+        {
+            error = "no command provided";
+            return null;
+        }
+        return result;
+    }
+
+    // Calcule la somme totale des pieces necessaires pour une commande.
+    static Dictionary<string, int> NeededPieces(Dictionary<string, int> command)
+    {
+        var total = new Dictionary<string, int>();
+        foreach (var kv in command)
+        {
+            var drone = Drones[kv.Key];
+            foreach (var piece in PiecesForDrone(drone))
+            {
+                if (total.ContainsKey(piece)) total[piece] += kv.Value;
+                else total[piece] = kv.Value;
+            }
+        }
+        return total;
+    }
+
+    // -----------------------------------------------------------------
+    //  STOCKS
+    // -----------------------------------------------------------------
+    static void DoStocks()
+    {
+        foreach (var kv in Stock)
+            Console.WriteLine($"{kv.Value} {kv.Key}");
+    }
+
+    // -----------------------------------------------------------------
+    //  NEEDED_STOCKS ARGS
+    // -----------------------------------------------------------------
+    static void DoNeededStocks(string args)
+    {
+        var command = ParseArgs(args, out string error);
+        if (command == null) { Console.WriteLine($"ERROR {error}"); return; }
+
+        foreach (var kv in command)
+        {
+            var drone = Drones[kv.Key];
+            Console.WriteLine($"{kv.Value} {kv.Key} :");
+            foreach (var piece in PiecesForDrone(drone))
+                Console.WriteLine($"{kv.Value} {piece}");
+        }
+
+        Console.WriteLine("Total :");
+        foreach (var kv in NeededPieces(command))
+            Console.WriteLine($"{kv.Value} {kv.Key}");
+    }
+
+    // -----------------------------------------------------------------
+    //  INSTRUCTIONS ARGS
+    //  On reproduit exactement l'enchainement de l'exemple du sujet :
+    //    hull+generator -> +move -> +core{system} -> +processor
+    // -----------------------------------------------------------------
+    static void DoInstructions(string args)
+    {
+        var command = ParseArgs(args, out string error);
+        if (command == null) { Console.WriteLine($"ERROR {error}"); return; }
+
+        foreach (var kv in command)
+        {
+            var d = Drones[kv.Key];
+            for (int i = 0; i < kv.Value; i++)
+                PrintDroneInstructions(d);
+        }
+    }
+
+    static void PrintDroneInstructions(Drone d)
+    {
+        Console.WriteLine($"PRODUCING {d.Name}");
+        Console.WriteLine($"GET_OUT_STOCK 1 {d.Hull}");
+        Console.WriteLine($"GET_OUT_STOCK 1 {d.Core}");
+        Console.WriteLine($"GET_OUT_STOCK 1 {d.Generator}");
+        Console.WriteLine($"GET_OUT_STOCK 1 {d.Move}");
+        Console.WriteLine($"GET_OUT_STOCK 1 {d.Processor}");
+        Console.WriteLine($"INSTALL {d.System} {d.Core}");
+        // Contrainte : seul le generateur peut etre monte dans la coque
+        // avant le module principal -> on assemble coque + generateur d'abord.
+        Console.WriteLine($"ASSEMBLE TMP1 {d.Hull} {d.Generator}");
+        // Le module de deplacement s'ajoute apres la coque.
+        Console.WriteLine($"ASSEMBLE TMP2 TMP1 {d.Move}");
+        // Le core (avec son systeme) est ajoute ensuite. Assemblage non nomme.
+        Console.WriteLine($"ASSEMBLE TMP2 {d.Core}{{{d.System}}}");
+        // Enfin le processeur : dernier assemblage = le drone connu.
+        Console.WriteLine($"ASSEMBLE [TMP2, {d.Core}{{{d.System}}}] {d.Processor}");
+        Console.WriteLine($"FINISHED {d.Name}");
+    }
+
+    // -----------------------------------------------------------------
+    //  VERIFY ARGS
+    // -----------------------------------------------------------------
+    static void DoVerify(string args)
+    {
+        var command = ParseArgs(args, out string error);
+        if (command == null) { Console.WriteLine($"ERROR {error}"); return; }
+
+        Console.WriteLine(HasEnoughStock(command) ? "AVAILABLE" : "UNAVAILABLE");
+    }
+
+    static bool HasEnoughStock(Dictionary<string, int> command)
+    {
+        foreach (var kv in NeededPieces(command))
+        {
+            if (!Stock.ContainsKey(kv.Key) || Stock[kv.Key] < kv.Value)
+                return false;
+        }
+        return true;
+    }
+
+    // -----------------------------------------------------------------
+    //  PRODUCE ARGS : consomme les pieces, incremente les drones produits.
+    // -----------------------------------------------------------------
+    static void DoProduce(string args)
+    {
+        var command = ParseArgs(args, out string error);
+        if (command == null) { Console.WriteLine($"ERROR {error}"); return; }
+
+        if (!HasEnoughStock(command))
+        {
+            Console.WriteLine("ERROR not enough pieces in stock to produce this command");
+            return;
+        }
+
+        // Consommation des pieces.
+        foreach (var kv in NeededPieces(command))
+            Stock[kv.Key] -= kv.Value;
+
+        // Ajout des drones produits au stock.
+        foreach (var kv in command)
+            Stock[kv.Key] += kv.Value;
+
+        Console.WriteLine("STOCK_UPDATED");
+    }
+}
