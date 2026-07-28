@@ -50,26 +50,8 @@ public sealed class TemplateRegistry
             return false;
         }
 
-        if (!ConstructionConstraints.Validate(candidate, out error))
+        if (!DroneValidator.Validate(candidate, _categories, out error))
             return false;
-
-        if (!Compatibility.CoreHostsSystem(candidate.Core, candidate.System))
-        {
-            error = $"`{candidate.Core.Name}` cannot host system `{candidate.System.Name}`";
-            return false;
-        }
-
-        if (!Compatibility.ProcessorMatchesSystem(candidate.Processor, candidate.System))
-        {
-            error = $"`{candidate.Processor.Name}` is not compatible with system `{candidate.System.Name}`";
-            return false;
-        }
-
-        if (!_categories.HasAnyCategory(candidate))
-        {
-            error = "the resulting drone does not match any category";
-            return false;
-        }
 
         Register(candidate);
         error = string.Empty;

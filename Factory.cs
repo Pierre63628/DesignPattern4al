@@ -26,7 +26,7 @@ public sealed class Factory
         Stock = new StockService();
         Movements = new MovementLog();
         Stock.Subscribe(Movements); // Observer : le journal ecoute le stock.
-        Parser = new ArgsParser(Templates);
+        Parser = new ArgsParser(Templates, Categories);
         Dispatcher = new InstructionDispatcher();
 
         SeedStock();
