@@ -15,6 +15,7 @@ public sealed class Factory
     public TemplateRegistry Templates { get; }
     public CategoryService Categories { get; }
     public StockService Stock { get; }
+    public MovementLog Movements { get; }
     public ArgsParser Parser { get; }
     public InstructionDispatcher Dispatcher { get; }
 
@@ -23,6 +24,8 @@ public sealed class Factory
         Categories = new CategoryService();
         Templates = new TemplateRegistry(Categories);
         Stock = new StockService();
+        Movements = new MovementLog();
+        Stock.Subscribe(Movements); // Observer : le journal ecoute le stock.
         Parser = new ArgsParser(Templates);
         Dispatcher = new InstructionDispatcher();
 
@@ -45,6 +48,8 @@ public sealed class Factory
         Dispatcher.Register("VERIFY", new VerifyInstruction(this));
         Dispatcher.Register("PRODUCE", new ProduceInstruction(this));
         Dispatcher.Register("ADD_TEMPLATE", new AddTemplateInstruction(this));
+        Dispatcher.Register("RECEIVE", new ReceiveInstruction(this));
+        Dispatcher.Register("GET_MOVEMENTS", new GetMovementsInstruction(Movements));
     }
 
     public void Dispatch(string line) => Dispatcher.Dispatch(line);

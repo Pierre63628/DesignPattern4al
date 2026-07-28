@@ -22,9 +22,9 @@ public sealed class ProduceInstruction : IInstruction
         }
 
         foreach (var (piece, qty) in needed)
-            _ctx.Stock.Remove(piece, qty);
+            _ctx.Stock.Remove(piece, qty, "PRODUCE");
         foreach (var item in command.Items)
-            _ctx.Stock.Add(item.Model.Name, item.Quantity);
+            _ctx.Stock.Add(item.Model.Name, item.Quantity, "PRODUCE");
 
         Console.WriteLine("STOCK_UPDATED");
     }
