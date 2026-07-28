@@ -30,7 +30,7 @@ public sealed class TemplateRegistry
                                        string generator, string move, string processor)
         => new(name,
                PieceCatalog.Get(hull), PieceCatalog.Get(core), PieceCatalog.Get(system),
-               PieceCatalog.Get(generator), PieceCatalog.Get(move), PieceCatalog.Get(processor));
+               new[] { PieceCatalog.Get(generator) }, new[] { PieceCatalog.Get(move) }, PieceCatalog.Get(processor));
 
     private void Register(DroneTemplate template) => _templates[template.Name] = template;
 
@@ -49,6 +49,9 @@ public sealed class TemplateRegistry
             error = $"template `{candidate.Name}` already exists";
             return false;
         }
+
+        if (!ConstructionConstraints.Validate(candidate, out error))
+            return false;
 
         if (!Compatibility.CoreHostsSystem(candidate.Core, candidate.System))
         {

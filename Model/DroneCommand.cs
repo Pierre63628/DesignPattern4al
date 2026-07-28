@@ -1,15 +1,15 @@
 namespace DroneFactory.Model;
 
 // Un drone demande dans une commande : un modele + une quantite.
-// (En phase 3, le modele pourra etre un template decore par des modifications.)
+// Le modele est une abstraction : template simple ou template decore (phase 3).
 public sealed class RequestedDrone
 {
-    public DroneTemplate Template { get; }
+    public IDroneModel Model { get; }
     public int Quantity { get; }
 
-    public RequestedDrone(DroneTemplate template, int quantity)
+    public RequestedDrone(IDroneModel model, int quantity)
     {
-        Template = template;
+        Model = model;
         Quantity = quantity;
     }
 }
@@ -19,15 +19,15 @@ public sealed class DroneCommand
 {
     public List<RequestedDrone> Items { get; } = new();
 
-    public void Add(DroneTemplate template, int quantity)
-        => Items.Add(new RequestedDrone(template, quantity));
+    public void Add(IDroneModel model, int quantity)
+        => Items.Add(new RequestedDrone(model, quantity));
 
     // Somme totale des pieces necessaires a la commande complete.
     public Dictionary<string, int> NeededPieces()
     {
         var total = new Dictionary<string, int>();
         foreach (var item in Items)
-            foreach (var piece in item.Template.AllPieces())
+            foreach (var piece in item.Model.AllPieces())
                 total[piece.Name] = total.GetValueOrDefault(piece.Name) + item.Quantity;
         return total;
     }

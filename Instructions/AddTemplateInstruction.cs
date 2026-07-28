@@ -35,14 +35,16 @@ public sealed class AddTemplateInstruction : IInstruction
         Console.WriteLine("TEMPLATE_ADDED");
     }
 
-    // Construit un DroneTemplate a partir des jetons de pieces fournis :
-    // verifie le catalogue et exige une piece de chaque nature + un systeme sur le core.
+    // Construit un DroneTemplate a partir des jetons de pieces fournis.
+    // Coque / module principal / module de controle sont uniques ; generateurs
+    // et modules de deplacement peuvent etre multiples (les comptes sont valides
+    // ensuite par ConstructionConstraints via le registre).
     private static DroneTemplate? BuildCandidate(string name, IEnumerable<string> pieceTokens, out string error)
     {
         error = string.Empty;
-        var byKind = new Dictionary<PieceKind, Piece>();
-        Piece? system = null;
-        Piece? systemHost = null;
+        Piece? hull = null, core = null, processor = null, system = null, systemHost = null;
+        var generators = new List<Piece>();
+        var moves = new List<Piece>();
 
         foreach (var rawToken in pieceTokens)
         {
@@ -71,12 +73,24 @@ public sealed class AddTemplateInstruction : IInstruction
                 return null;
             }
 
-            if (byKind.ContainsKey(basePiece!.Kind))
+            switch (basePiece!.Kind)
             {
-                error = $"a drone needs exactly one {basePiece.Kind.ToString().ToLower()}";
-                return null;
+                case PieceKind.Hull:
+                    if (hull != null) { error = "a drone needs exactly one hull"; return null; }
+                    hull = basePiece; break;
+                case PieceKind.Core:
+                    if (core != null) { error = "a drone needs exactly one main module"; return null; }
+                    core = basePiece; break;
+                case PieceKind.Processor:
+                    if (processor != null) { error = "a drone needs exactly one control module"; return null; }
+                    processor = basePiece; break;
+                case PieceKind.Generator:
+                    generators.Add(basePiece); break;
+                case PieceKind.Move:
+                    moves.Add(basePiece); break;
+                case PieceKind.System:
+                    error = "a system must be installed on the main module (Core{System})"; return null;
             }
-            byKind[basePiece.Kind] = basePiece;
 
             if (systemName != null)
             {
@@ -95,23 +109,15 @@ public sealed class AddTemplateInstruction : IInstruction
             }
         }
 
-        foreach (var kind in new[] { PieceKind.Hull, PieceKind.Core, PieceKind.Generator, PieceKind.Move, PieceKind.Processor })
-        {
-            if (!byKind.ContainsKey(kind))
-            {
-                error = $"a drone needs a {kind.ToString().ToLower()}";
-                return null;
-            }
-        }
-
+        if (hull == null) { error = "a drone needs a hull"; return null; }
+        if (core == null) { error = "a drone needs a main module"; return null; }
+        if (processor == null) { error = "a drone needs a control module"; return null; }
         if (system == null || systemHost!.Kind != PieceKind.Core)
         {
             error = "the main module must have a system installed (Core{System})";
             return null;
         }
 
-        return new DroneTemplate(name,
-            byKind[PieceKind.Hull], byKind[PieceKind.Core], system,
-            byKind[PieceKind.Generator], byKind[PieceKind.Move], byKind[PieceKind.Processor]);
+        return new DroneTemplate(name, hull, core, system, generators, moves, processor);
     }
 }

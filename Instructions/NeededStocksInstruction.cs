@@ -16,9 +16,11 @@ public sealed class NeededStocksInstruction : IInstruction
 
         foreach (var item in command!.Items)
         {
-            Console.WriteLine($"{item.Quantity} {item.Template.Name} :");
-            foreach (var piece in item.Template.AllPieces())
-                Console.WriteLine($"{item.Quantity} {piece.Name}");
+            Console.WriteLine($"{item.Quantity} {item.Model.Name} :");
+            // On regroupe les pieces identiques (un drone peut avoir 2 generateurs
+            // ou plusieurs modules de deplacement identiques).
+            foreach (var group in item.Model.AllPieces().GroupBy(p => p.Name))
+                Console.WriteLine($"{item.Quantity * group.Count()} {group.Key}");
         }
 
         Console.WriteLine("Total :");

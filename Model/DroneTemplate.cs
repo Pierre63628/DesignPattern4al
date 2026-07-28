@@ -1,36 +1,36 @@
 namespace DroneFactory.Model;
 
-// Un modele (template) de drone : les 5 pieces + le systeme installe sur le core.
-// Immuable : un template valide reste valide.
-public sealed class DroneTemplate
+// Un modele (template) de drone nomme et immuable.
+// Coque, module principal, systeme et module de controle sont uniques ;
+// generateurs et modules de deplacement sont des listes (5.1.2).
+public sealed class DroneTemplate : IDroneModel
 {
     public string Name { get; }
     public Piece Hull { get; }
     public Piece Core { get; }
     public Piece System { get; }
-    public Piece Generator { get; }
-    public Piece Move { get; }
     public Piece Processor { get; }
+    public IReadOnlyList<Piece> Generators { get; }
+    public IReadOnlyList<Piece> Moves { get; }
 
     public DroneTemplate(string name, Piece hull, Piece core, Piece system,
-                         Piece generator, Piece move, Piece processor)
+                         IEnumerable<Piece> generators, IEnumerable<Piece> moves, Piece processor)
     {
         Name = name;
         Hull = hull;
         Core = core;
         System = system;
-        Generator = generator;
-        Move = move;
         Processor = processor;
+        Generators = generators.ToList();
+        Moves = moves.ToList();
     }
 
-    // Toutes les pieces consommees pour produire un exemplaire (systeme inclus).
     public IEnumerable<Piece> AllPieces()
     {
         yield return Hull;
         yield return Core;
-        yield return Generator;
-        yield return Move;
+        foreach (var generator in Generators) yield return generator;
+        foreach (var move in Moves) yield return move;
         yield return Processor;
         yield return System;
     }

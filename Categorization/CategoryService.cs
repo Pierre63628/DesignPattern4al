@@ -14,9 +14,9 @@ public sealed class CategoryService
         new SubmersibleCategory(),
     };
 
-    public IReadOnlyList<IDroneCategory> CategoriesOf(DroneTemplate drone)
+    public IReadOnlyList<IDroneCategory> CategoriesOf(IDroneModel drone)
         => _categories.Where(c => c.Matches(drone)).ToList();
 
-    public bool HasAnyCategory(DroneTemplate drone)
+    public bool HasAnyCategory(IDroneModel drone)
         => _categories.Any(c => c.Matches(drone));
 }

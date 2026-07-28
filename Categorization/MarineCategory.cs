@@ -8,8 +8,8 @@ public sealed class MarineCategory : IDroneCategory
     public string Name => "Marin";
     public char Code => 'M';
 
-    public bool Matches(DroneTemplate drone)
+    public bool Matches(IDroneModel drone)
         => drone.Hull.Is(PieceType.S)
         && drone.System.Is(PieceType.D2)
-        && drone.Move.Is(PieceType.M);
+        && drone.Moves.Any(m => m.Is(PieceType.M));
 }

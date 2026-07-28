@@ -11,5 +11,5 @@ public interface IDroneCategory
 {
     string Name { get; }   // ex: "Aérien"
     char Code { get; }     // ex: 'F'
-    bool Matches(DroneTemplate drone);
+    bool Matches(IDroneModel drone);
 }

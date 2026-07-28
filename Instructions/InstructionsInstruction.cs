@@ -1,10 +1,10 @@
-using DroneFactory.Model;
+using DroneFactory.Assembly;
 
 namespace DroneFactory.Instructions;
 
 // INSTRUCTIONS ARGS : liste les instructions d'assemblage.
-// Generation encore naive a l'etape 1 ; elle passera par un Builder a l'etape 2
-// (necessaire pour gerer plusieurs generateurs / modules de deplacement).
+// La generation est deleguee au Builder (DroneAssembler), qui gere un nombre
+// quelconque de generateurs / modules de deplacement (5.1.2).
 public sealed class InstructionsInstruction : IInstruction
 {
     private readonly Factory _ctx;
@@ -20,22 +20,7 @@ public sealed class InstructionsInstruction : IInstruction
 
         foreach (var item in command!.Items)
             for (int i = 0; i < item.Quantity; i++)
-                PrintDroneInstructions(item.Template);
-    }
-
-    private static void PrintDroneInstructions(DroneTemplate d)
-    {
-        Console.WriteLine($"PRODUCING {d.Name}");
-        Console.WriteLine($"GET_OUT_STOCK 1 {d.Hull.Name}");
-        Console.WriteLine($"GET_OUT_STOCK 1 {d.Core.Name}");
-        Console.WriteLine($"GET_OUT_STOCK 1 {d.Generator.Name}");
-        Console.WriteLine($"GET_OUT_STOCK 1 {d.Move.Name}");
-        Console.WriteLine($"GET_OUT_STOCK 1 {d.Processor.Name}");
-        Console.WriteLine($"INSTALL {d.System.Name} {d.Core.Name}");
-        Console.WriteLine($"ASSEMBLE TMP1 {d.Hull.Name} {d.Generator.Name}");
-        Console.WriteLine($"ASSEMBLE TMP2 TMP1 {d.Move.Name}");
-        Console.WriteLine($"ASSEMBLE TMP2 {d.Core.Name}{{{d.System.Name}}}");
-        Console.WriteLine($"ASSEMBLE [TMP2, {d.Core.Name}{{{d.System.Name}}}] {d.Processor.Name}");
-        Console.WriteLine($"FINISHED {d.Name}");
+                foreach (var line in DroneAssembler.BuildInstructions(item.Model))
+                    Console.WriteLine(line);
     }
 }

@@ -10,9 +10,9 @@ public sealed class SubmersibleCategory : IDroneCategory
     public string Name => "Submersible";
     public char Code => 'S';
 
-    public bool Matches(DroneTemplate drone)
+    public bool Matches(IDroneModel drone)
         => drone.Hull.Is(PieceType.S)
-        && drone.Generator.Is(PieceType.S)
-        && drone.Move.Is(PieceType.S)
+        && drone.Generators.All(g => g.Is(PieceType.S))
+        && drone.Moves.All(m => m.Is(PieceType.S))
         && drone.System.Is(PieceType.D3);
 }
