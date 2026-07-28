@@ -1,6 +1,7 @@
 using DroneFactory.Categorization;
 using DroneFactory.Instructions;
 using DroneFactory.Model;
+using DroneFactory.Orders;
 using DroneFactory.Parsing;
 using DroneFactory.Services;
 using DroneFactory.Templates;
@@ -16,6 +17,7 @@ public sealed class Factory
     public CategoryService Categories { get; }
     public StockService Stock { get; }
     public MovementLog Movements { get; }
+    public OrderService Orders { get; }
     public ArgsParser Parser { get; }
     public InstructionDispatcher Dispatcher { get; }
 
@@ -26,6 +28,7 @@ public sealed class Factory
         Stock = new StockService();
         Movements = new MovementLog();
         Stock.Subscribe(Movements); // Observer : le journal ecoute le stock.
+        Orders = new OrderService();
         Parser = new ArgsParser(Templates, Categories);
         Dispatcher = new InstructionDispatcher();
 
@@ -50,6 +53,9 @@ public sealed class Factory
         Dispatcher.Register("ADD_TEMPLATE", new AddTemplateInstruction(this));
         Dispatcher.Register("RECEIVE", new ReceiveInstruction(this));
         Dispatcher.Register("GET_MOVEMENTS", new GetMovementsInstruction(Movements));
+        Dispatcher.Register("ORDER", new OrderInstruction(this));
+        Dispatcher.Register("SEND", new SendInstruction(this));
+        Dispatcher.Register("LIST_ORDER", new ListOrderInstruction(Orders));
     }
 
     public void Dispatch(string line) => Dispatcher.Dispatch(line);

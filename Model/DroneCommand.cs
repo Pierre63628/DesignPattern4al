@@ -22,6 +22,15 @@ public sealed class DroneCommand
     public void Add(IDroneModel model, int quantity)
         => Items.Add(new RequestedDrone(model, quantity));
 
+    // Quantite demandee par nom de drone (un drone modifie compte sous son nom de base).
+    public Dictionary<string, int> ByDroneName()
+    {
+        var byName = new Dictionary<string, int>();
+        foreach (var item in Items)
+            byName[item.Model.Name] = byName.GetValueOrDefault(item.Model.Name) + item.Quantity;
+        return byName;
+    }
+
     // Somme totale des pieces necessaires a la commande complete.
     public Dictionary<string, int> NeededPieces()
     {
