@@ -1,0 +1,650 @@
+<style>
+  :root {
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, "Cascadia Code", "Roboto Mono", monospace;
+
+    --paper: #EEF1F5;
+    --surface: #FFFFFF;
+    --surface-2: #F6F8FB;
+    --ink: #161B22;
+    --ink-soft: #4A5563;
+    --line: #D4DBE4;
+    --amber: #B0500F;
+    --amber-bright: #C9611E;
+    --teal: #12666B;
+    --green: #2E7D4F;
+    --red: #B23A3A;
+
+    --console-bg: #10151F;
+    --console-panel: #161D2A;
+    --console-fg: #C6D2E1;
+    --console-dim: #6E7C90;
+    --k: #E39A55;   /* mots-clés instruction */
+    --r: #86C79A;   /* résultats / états */
+    --v: #8FBDE4;   /* identifiants */
+
+    --shadow: 0 1px 2px rgba(20,30,45,.06), 0 8px 30px rgba(20,30,45,.08);
+    --maxw: 1060px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0D121B;
+      --surface: #151D29;
+      --surface-2: #111823;
+      --ink: #E9EEF6;
+      --ink-soft: #98A5B7;
+      --line: #253141;
+      --amber: #E8924A;
+      --amber-bright: #F0A968;
+      --teal: #47B4BB;
+      --green: #6FCB94;
+      --red: #E5807F;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 34px rgba(0,0,0,.38);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0D121B; --surface: #151D29; --surface-2: #111823;
+    --ink: #E9EEF6; --ink-soft: #98A5B7; --line: #253141;
+    --amber: #E8924A; --amber-bright: #F0A968; --teal: #47B4BB;
+    --green: #6FCB94; --red: #E5807F;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 34px rgba(0,0,0,.38);
+  }
+  :root[data-theme="light"] {
+    --paper: #EEF1F5; --surface: #FFFFFF; --surface-2: #F6F8FB;
+    --ink: #161B22; --ink-soft: #4A5563; --line: #D4DBE4;
+    --amber: #B0500F; --amber-bright: #C9611E; --teal: #12666B;
+    --green: #2E7D4F; --red: #B23A3A;
+    --shadow: 0 1px 2px rgba(20,30,45,.06), 0 8px 30px rgba(20,30,45,.08);
+  }
+
+  * { box-sizing: border-box; }
+
+  .deck {
+    height: 100vh;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  @media (prefers-reduced-motion: reduce) { .deck { scroll-behavior: auto; } }
+
+  .slide {
+    min-height: 100vh;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(28px, 5vw, 72px) clamp(22px, 6vw, 96px);
+    position: relative;
+  }
+  .slide > .inner { width: 100%; max-width: var(--maxw); margin: 0 auto; }
+
+  /* --- typographie --- */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .74rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--amber);
+    font-weight: 600;
+    display: flex; align-items: center; gap: .7em;
+    margin: 0 0 1.1rem;
+  }
+  .eyebrow::before {
+    content: ""; width: 26px; height: 2px; background: var(--amber); display: inline-block;
+  }
+  h1 { font-size: clamp(2.6rem, 6.6vw, 4.9rem); line-height: .98; letter-spacing: -.025em; font-weight: 800; margin: 0; text-wrap: balance; }
+  h2 { font-size: clamp(1.7rem, 3.8vw, 2.7rem); line-height: 1.05; letter-spacing: -.02em; font-weight: 750; margin: 0 0 .5rem; text-wrap: balance; }
+  h3 { font-size: 1.02rem; margin: 0 0 .35rem; font-weight: 700; letter-spacing: -.01em; }
+  p { line-height: 1.6; color: var(--ink-soft); margin: .5rem 0; max-width: 62ch; }
+  strong { color: var(--ink); font-weight: 650; }
+  .lead { font-size: clamp(1.05rem, 2vw, 1.28rem); color: var(--ink-soft); max-width: 54ch; }
+
+  .tag {
+    font-family: var(--mono); font-size: .72rem; letter-spacing: .04em;
+    color: var(--teal); background: color-mix(in srgb, var(--teal) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--teal) 30%, transparent);
+    padding: .2em .6em; border-radius: 5px; white-space: nowrap;
+  }
+
+  .grid { display: grid; gap: clamp(14px, 2vw, 22px); }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 860px) { .g2, .g3, .g4 { grid-template-columns: 1fr; } .split { grid-template-columns: 1fr !important; } }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: clamp(16px, 2vw, 22px); box-shadow: var(--shadow);
+  }
+  .card.flat { box-shadow: none; background: var(--surface-2); }
+
+  .split { display: grid; grid-template-columns: 1.02fr 1fr; gap: clamp(18px, 3vw, 34px); align-items: center; }
+
+  ul.clean { list-style: none; padding: 0; margin: .4rem 0 0; }
+  ul.clean li { position: relative; padding-left: 1.4em; margin: .5em 0; color: var(--ink-soft); line-height: 1.5; }
+  ul.clean li::before { content: "▹"; position: absolute; left: 0; color: var(--amber); font-weight: 700; }
+  ul.clean li strong { color: var(--ink); }
+
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: .5em 1em; align-items: baseline; }
+  .kv dt { font-family: var(--mono); font-size: .82rem; color: var(--teal); font-weight: 600; }
+  .kv dd { margin: 0; color: var(--ink-soft); line-height: 1.5; }
+
+  /* --- console --- */
+  .console {
+    background: var(--console-bg); border: 1px solid #212B3A; border-radius: 11px;
+    font-family: var(--mono); font-size: clamp(.74rem, 1.15vw, .86rem); line-height: 1.65;
+    color: var(--console-fg); overflow-x: auto; box-shadow: var(--shadow);
+  }
+  .console .bar {
+    display: flex; align-items: center; gap: .5em; padding: .5em .9em;
+    border-bottom: 1px solid #212B3A; color: var(--console-dim); font-size: .72rem; letter-spacing: .05em;
+  }
+  .console .bar i { width: 9px; height: 9px; border-radius: 50%; background: #33404f; display: inline-block; }
+  .console pre { margin: 0; padding: .85em 1.1em; white-space: pre; }
+  .console .k { color: var(--k); }
+  .console .r { color: var(--r); }
+  .console .v { color: var(--v); }
+  .console .c { color: var(--console-dim); font-style: italic; }
+  .console .p { color: var(--console-dim); }
+
+  /* code C# */
+  .code {
+    background: var(--console-panel); border: 1px solid #212B3A; border-radius: 11px;
+    font-family: var(--mono); font-size: clamp(.72rem, 1.05vw, .82rem); line-height: 1.6;
+    color: var(--console-fg); overflow-x: auto;
+  }
+  .code pre { margin: 0; padding: 1em 1.15em; white-space: pre; }
+  .code .kw { color: #C58FD8; }
+  .code .ty { color: #7FC7CE; }
+  .code .cm { color: var(--console-dim); font-style: italic; }
+  .code .st { color: var(--k); }
+
+  .pill { display: inline-flex; align-items: center; gap: .45em; font-family: var(--mono); font-size: .72rem;
+    padding: .28em .66em; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft); }
+  .pill.keep { color: var(--green); border-color: color-mix(in srgb, var(--green) 40%, transparent); background: color-mix(in srgb, var(--green) 10%, transparent); }
+  .pill.drop { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, transparent); background: color-mix(in srgb, var(--red) 9%, transparent); }
+
+  .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; }
+  .flow .step { flex: 1 1 0; min-width: 150px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .flow .step .n { font-family: var(--mono); font-size: .72rem; color: var(--amber); letter-spacing: .1em; }
+  .flow .arrow { align-self: center; color: var(--ink-soft); font-size: 1.2rem; }
+  @media (max-width: 860px) { .flow .arrow { display: none; } }
+
+  .modmap { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px 16px; align-items: center; }
+  .modmap .m-mod { font-weight: 650; color: var(--ink); }
+  .modmap .m-arr { color: var(--amber); font-family: var(--mono); }
+  .modmap .m-pat { font-family: var(--mono); color: var(--teal); font-size: .9rem; }
+  .modmap .row { display: contents; }
+
+  .footer-note { margin-top: 1.4rem; font-size: .82rem; color: var(--ink-soft); font-family: var(--mono); letter-spacing: .02em; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* --- HUD --- */
+  .progress { position: fixed; top: 0; left: 0; height: 3px; width: 100%; transform-origin: 0 50%;
+    background: linear-gradient(90deg, var(--amber-bright), var(--teal)); transform: scaleX(0); transition: transform .35s ease; z-index: 50; }
+  @media (prefers-reduced-motion: reduce) { .progress { transition: none; } }
+  .hud { position: fixed; right: clamp(14px, 3vw, 30px); bottom: clamp(14px, 3vw, 26px); z-index: 50;
+    display: flex; align-items: center; gap: 12px; }
+  .counter { font-family: var(--mono); font-size: .8rem; color: var(--ink-soft); letter-spacing: .08em;
+    background: color-mix(in srgb, var(--surface) 82%, transparent); border: 1px solid var(--line);
+    padding: .35em .7em; border-radius: 8px; backdrop-filter: blur(6px); }
+  .counter b { color: var(--amber); font-weight: 700; }
+  .nav { display: flex; gap: 6px; }
+  .nav button { font-family: var(--mono); width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 1rem; line-height: 1;
+    box-shadow: var(--shadow); }
+  .nav button:hover { border-color: var(--amber); color: var(--amber); }
+  .nav button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+  .kbd { font-family: var(--mono); font-size: .72rem; border: 1px solid var(--line); border-bottom-width: 2px;
+    border-radius: 5px; padding: .1em .45em; color: var(--ink-soft); background: var(--surface); }
+
+  .title-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 2rem; }
+  .rule { height: 1px; background: var(--line); border: 0; margin: 1.4rem 0; }
+  .big-index { position: absolute; right: clamp(20px, 5vw, 70px); top: clamp(18px, 4vw, 46px);
+    font-family: var(--mono); font-size: clamp(3rem, 9vw, 7rem); font-weight: 800; color: var(--ink);
+    opacity: .05; letter-spacing: -.04em; line-height: 1; pointer-events: none; }
+</style>
+
+<div class="progress" aria-hidden="true"></div>
+<div class="hud">
+  <div class="counter" aria-live="polite"><b class="c-now">01</b> / <span class="c-total">14</span></div>
+  <div class="nav">
+    <button class="prev" aria-label="Diapositive précédente">‹</button>
+    <button class="next" aria-label="Diapositive suivante">›</button>
+  </div>
+</div>
+
+<main class="deck">
+
+  <!-- 1 · TITRE -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">Soutenance · Design Patterns en C#</p>
+      <h1>Usine de&nbsp;Drones</h1>
+      <p class="lead" style="margin-top:1.4rem">D'une implémentation naïve à une architecture guidée par les design&nbsp;patterns — assemblage, stock et commandes d'une usine de drones, pilotés en console.</p>
+      <div class="title-meta">
+        <span class="tag">.NET 10</span>
+        <span class="tag">REPL console</span>
+        <span class="tag">5 patterns</span>
+        <span class="tag">4 modules v3</span>
+        <span class="tag">1 commit / étape</span>
+      </div>
+      <p class="footer-note">Naviguez avec <span class="kbd">←</span> <span class="kbd">→</span> · <span class="kbd">Espace</span> · ou les flèches en bas à droite.</p>
+    </div>
+  </section>
+
+  <!-- 2 · LE SUJET -->
+  <section class="slide">
+    <span class="big-index">02</span>
+    <div class="inner">
+      <p class="eyebrow">Le sujet</p>
+      <h2>Une usine qui assemble des drones à la demande</h2>
+      <div class="split" style="margin-top:1.4rem">
+        <div>
+          <p>Le programme lit des <strong>instructions en console</strong> et répond sans jamais planter. Il raisonne sur un <strong>stock de pièces</strong> et sur la façon d'assembler chaque drone.</p>
+          <ul class="clean">
+            <li><strong>STOCKS</strong> / <strong>NEEDED_STOCKS</strong> — inventaire disponible et nécessaire</li>
+            <li><strong>INSTRUCTIONS</strong> — la séquence d'assemblage détaillée</li>
+            <li><strong>VERIFY</strong> / <strong>PRODUCE</strong> — vérifier puis produire une commande</li>
+            <li><strong>ADD_TEMPLATE</strong> — enregistrer un nouveau modèle de drone</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Un drone = 6 éléments</h3>
+          <dl class="kv" style="margin-top:.7rem">
+            <dt>coque</dt><dd>1 — étanche (S) ou non</dd>
+            <dt>module&nbsp;principal</dt><dd>1 — reçoit un système</dd>
+            <dt>générateur(s)</dt><dd>1 à 2</dd>
+            <dt>déplacement</dt><dd>1 à 3 modules</dd>
+            <dt>contrôle</dt><dd>1 module</dd>
+            <dt>système</dt><dd>installé sur le module principal</dd>
+          </dl>
+        </div>
+      </div>
+      <p class="footer-note">3 phases imposées : implémentation naïve → design patterns → modules libres.</p>
+    </div>
+  </section>
+
+  <!-- 3 · FIL ROUGE -->
+  <section class="slide">
+    <span class="big-index">03</span>
+    <div class="inner">
+      <p class="eyebrow">La démarche</p>
+      <h2>Chaque pattern répond à une douleur réelle du code naïf</h2>
+      <p class="lead" style="margin-top:.8rem">La version naïve compile et fonctionne — c'est un <em>proof of concept</em> volontairement « sale ». On introduit ensuite un pattern <strong>uniquement là où le code fait mal</strong>, pas par principe.</p>
+      <div class="grid g3" style="margin-top:1.4rem">
+        <div class="card flat">
+          <h3 style="color:var(--amber)">Phase 1 — Naïf</h3>
+          <p>Tout en dur, un gros <span class="tag">switch</span>, données figées, génération d'instructions codée en dur.</p>
+        </div>
+        <div class="card flat">
+          <h3 style="color:var(--amber)">Phase 2 — Patterns</h3>
+          <p>Refactoring : modèle de domaine, catégorisation, dispatch des commandes, génération d'assemblage.</p>
+        </div>
+        <div class="card flat">
+          <h3 style="color:var(--amber)">Phase 3 — Modules</h3>
+          <p>Traçabilité, modifications de drones, commandes clients — chacun sert un nouveau pattern.</p>
+        </div>
+      </div>
+      <hr class="rule">
+      <div class="kv" style="grid-template-columns:auto 1fr; gap:.7em 1.4em">
+        <dt>gros switch</dt><dd>→ <strong>Command</strong> : une classe par instruction</dd>
+        <dt>catégories en if/else</dt><dd>→ <strong>Strategy</strong> : une classe par catégorie</dd>
+        <dt>assemblage codé en dur</dt><dd>→ <strong>Builder</strong> : construction pas-à-pas</dd>
+        <dt>« qui a touché le stock ? »</dt><dd>→ <strong>Observer</strong> : le stock est écouté</dd>
+        <dt>drones sur-mesure</dt><dd>→ <strong>Decorator</strong> : modifications composables</dd>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · ARCHITECTURE -->
+  <section class="slide">
+    <span class="big-index">04</span>
+    <div class="inner">
+      <p class="eyebrow">Architecture</p>
+      <h2>Des namespaces alignés sur les responsabilités</h2>
+      <div class="grid g4" style="margin-top:1.3rem">
+        <div class="card"><h3>Model</h3><p>Piece, PieceType, IDroneModel, DroneTemplate, DroneCommand.</p></div>
+        <div class="card"><h3>Categorization <span class="tag">Strategy</span></h3><p>IDroneCategory + 4 catégories.</p></div>
+        <div class="card"><h3>Instructions <span class="tag">Command</span></h3><p>IInstruction + dispatcher.</p></div>
+        <div class="card"><h3>Assembly <span class="tag">Builder</span></h3><p>DroneAssembler + builder console.</p></div>
+        <div class="card"><h3>Services <span class="tag">Observer</span></h3><p>StockService + MovementLog.</p></div>
+        <div class="card"><h3>Modifications <span class="tag">Decorator</span></h3><p>WITH / WITHOUT / REPLACE.</p></div>
+        <div class="card"><h3>Templates</h3><p>Registre, validation, compatibilité.</p></div>
+        <div class="card"><h3>Orders · Parsing</h3><p>Commandes clients · analyse des ARGS.</p></div>
+      </div>
+      <p class="footer-note" style="margin-top:1.3rem"><strong style="color:var(--teal)">Factory</strong> = point de composition unique : instancie les services, ensemence le stock, enregistre les instructions.</p>
+    </div>
+  </section>
+
+  <!-- 5 · STRATEGY -->
+  <section class="slide">
+    <span class="big-index">05</span>
+    <div class="inner">
+      <p class="eyebrow">Pattern 01 · Strategy</p>
+      <h2>Catégoriser les drones</h2>
+      <div class="split" style="margin-top:1.1rem">
+        <div>
+          <h3>Le problème</h3>
+          <p>4 catégories (Aérien, Marin, Terrestre, Submersible), chacune avec ses règles sur les types de pièces. Un drone doit appartenir à <strong>au moins une</strong> catégorie.</p>
+          <h3 style="margin-top:1rem">La solution</h3>
+          <p>Chaque catégorie est une <strong>stratégie</strong> interchangeable : <span class="tag">bool Matches(IDroneModel)</span>. Le service applique la liste.</p>
+          <h3 style="margin-top:1rem">Pourquoi ici</h3>
+          <p>Ajouter une catégorie = <strong>ajouter une classe</strong>, sans toucher au reste (Open/Closed). Idéal quand des règles similaires se multiplient.</p>
+        </div>
+        <div class="code" role="img" aria-label="Extrait de la stratégie Aérien">
+          <pre><span class="cm">// une stratégie par catégorie</span>
+<span class="kw">public sealed class</span> <span class="ty">AerialCategory</span> : <span class="ty">IDroneCategory</span>
+{
+    <span class="kw">public</span> <span class="ty">bool</span> Matches(<span class="ty">IDroneModel</span> d)
+        => d.Moves.Any(m => m.Is(<span class="ty">PieceType</span>.F))
+        && d.System.Is(<span class="ty">PieceType</span>.D3);
+}
+
+<span class="cm">// le contexte n'orchestre que l'abstraction</span>
+_categories.Any(c => c.Matches(drone));</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · COMMAND -->
+  <section class="slide">
+    <span class="big-index">06</span>
+    <div class="inner">
+      <p class="eyebrow">Pattern 02 · Command</p>
+      <h2>Chaque instruction, un objet</h2>
+      <div class="split" style="margin-top:1.1rem">
+        <div>
+          <h3>Le problème</h3>
+          <p>Le code naïf : un <strong>switch géant</strong> dans la boucle principale. Chaque nouvelle instruction v3 l'alourdit.</p>
+          <h3 style="margin-top:1rem">La solution</h3>
+          <p>Une interface <span class="tag">IInstruction.Execute(args)</span>, une classe par commande, un <strong>dispatcher</strong> mot-clé → commande.</p>
+          <h3 style="margin-top:1rem">Pourquoi ici</h3>
+          <p>Les 11 instructions deviennent isolées et testables. Le REPL ne connaît plus aucune commande : il délègue.</p>
+        </div>
+        <div class="code" role="img" aria-label="Extrait du dispatcher">
+          <pre><span class="kw">public interface</span> <span class="ty">IInstruction</span>
+{
+    <span class="kw">void</span> Execute(<span class="ty">string</span> args);
+}
+
+<span class="cm">// dispatcher (invoker)</span>
+<span class="kw">if</span> (_instructions.TryGetValue(keyword, <span class="kw">out var</span> cmd))
+    cmd.Execute(args);
+<span class="kw">else</span>
+    Console.WriteLine($<span class="st">"ERROR `{keyword}` is not a recognized instruction"</span>);</pre>
+        </div>
+      </div>
+      <p class="footer-note">Le REPL entier tient en ~10 lignes ; ajouter une instruction = 1 classe + 1 enregistrement.</p>
+    </div>
+  </section>
+
+  <!-- 7 · BUILDER -->
+  <section class="slide">
+    <span class="big-index">07</span>
+    <div class="inner">
+      <p class="eyebrow">Pattern 03 · Builder</p>
+      <h2>Générer la séquence d'assemblage</h2>
+      <div class="split" style="margin-top:1.1rem">
+        <div>
+          <h3>Le problème</h3>
+          <p>L'ordre d'assemblage a des contraintes (générateur avant le module principal, déplacement après la coque…) et il faut gérer <strong>1 à 3 déplacements et 1 à 2 générateurs</strong> (v3).</p>
+          <h3 style="margin-top:1rem">La solution</h3>
+          <p>Un <strong>directeur</strong> (<span class="tag">DroneAssembler</span>) encode l'ordre ; un <strong>builder</strong> produit la représentation console. On pourrait brancher un autre builder (graphe, JSON) sans toucher au directeur.</p>
+        </div>
+        <div class="code" role="img" aria-label="Extrait du directeur d'assemblage">
+          <pre><span class="cm">// le directeur encode l'ORDRE, pas la sortie</span>
+builder.BeginFrom(drone.Hull.Name);
+<span class="kw">foreach</span> (<span class="kw">var</span> g <span class="kw">in</span> drone.Generators)
+    builder.AssembleWith(g.Name);
+<span class="kw">foreach</span> (<span class="kw">var</span> m <span class="kw">in</span> drone.Moves)
+    builder.AssembleWith(m.Name);
+builder.AssembleWith($<span class="st">"{Core}{{{System}}}"</span>);
+builder.AssembleWith(drone.Processor.Name);</pre>
+        </div>
+      </div>
+      <p class="footer-note">Choix assumé : chaque assemblage intermédiaire est nommé <span class="tag">TMPk</span> — toujours valide et généralisable à N pièces.</p>
+    </div>
+  </section>
+
+  <!-- 8 · OBSERVER -->
+  <section class="slide">
+    <span class="big-index">08</span>
+    <div class="inner">
+      <p class="eyebrow">Pattern 04 · Observer</p>
+      <h2>Tracer les mouvements de stock</h2>
+      <div class="split" style="margin-top:1.1rem">
+        <div>
+          <h3>Le problème</h3>
+          <p>Le module <span class="tag">GET_MOVEMENTS</span> (5.2.3) exige l'historique de tout ce qui a bougé le stock — sans que le stock connaisse le journal.</p>
+          <h3 style="margin-top:1rem">La solution</h3>
+          <p>Le <strong>StockService</strong> devient un sujet observable ; le <strong>MovementLog</strong> s'y abonne. Chaque entrée/sortie réelle notifie un mouvement. Le seeding initial reste silencieux.</p>
+          <h3 style="margin-top:1rem">Pourquoi ici</h3>
+          <p>Découplage total : demain, une alerte « stock bas » s'abonne sans modifier le stock.</p>
+        </div>
+        <div class="code" role="img" aria-label="Extrait de l'observable de stock">
+          <pre><span class="kw">public void</span> Remove(<span class="ty">string</span> name, <span class="ty">int</span> qty, <span class="ty">string</span> reason)
+{
+    _quantities[name] = Get(name) - qty;
+    Notify(name, -qty, reason);   <span class="cm">// -> observateurs</span>
+}
+
+<span class="cm">// abonnement (Factory)</span>
+Stock.Subscribe(Movements);</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · DECORATOR -->
+  <section class="slide">
+    <span class="big-index">09</span>
+    <div class="inner">
+      <p class="eyebrow">Pattern 05 · Decorator</p>
+      <h2>Modifier un drone à la volée</h2>
+      <div class="split" style="margin-top:1.1rem">
+        <div>
+          <h3>Le problème</h3>
+          <p>Les ARGS v3 (5.2.1) permettent <span class="tag">WITH</span> / <span class="tag">WITHOUT</span> / <span class="tag">REPLACE</span> — et ces clauses se <strong>composent</strong> sur un même drone.</p>
+          <h3 style="margin-top:1rem">La solution</h3>
+          <p>Chaque modification <strong>enveloppe</strong> un <span class="tag">IDroneModel</span> et en présente une version transformée, avec la même interface. On empile les décorateurs.</p>
+          <h3 style="margin-top:1rem">Pourquoi ici</h3>
+          <p>Composition naturelle et récursive ; le drone décoré reste consommable par <em>toutes</em> les instructions existantes.</p>
+        </div>
+        <div class="code" role="img" aria-label="Extrait des décorateurs de modification">
+          <pre><span class="cm">// on empile les modifications</span>
+<span class="ty">IDroneModel</span> model = template;
+model = <span class="kw">new</span> <span class="ty">ReplacePiecesModification</span>(model, repl);
+model = <span class="kw">new</span> <span class="ty">AddPiecesModification</span>(model, adds);
+model = <span class="kw">new</span> <span class="ty">RemovePiecesModification</span>(model, rem);
+
+<span class="cm">// le résultat est validé comme un vrai drone</span>
+DroneValidator.Validate(model, categories, <span class="kw">out</span> error);</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · MODULES v3 -->
+  <section class="slide">
+    <span class="big-index">10</span>
+    <div class="inner">
+      <p class="eyebrow">Phase 3 · Modules</p>
+      <h2>Quatre modules, chacun servant un pattern</h2>
+      <div class="modmap" style="margin-top:1.4rem; font-size:1.02rem">
+        <div class="row"><span class="m-mod">Traçabilité — RECEIVE, GET_MOVEMENTS</span><span class="m-arr">→</span><span class="m-pat">Observer</span></div>
+        <div class="row"><span class="m-mod">Modification de drones — WITH/WITHOUT/REPLACE</span><span class="m-arr">→</span><span class="m-pat">Decorator</span></div>
+        <div class="row"><span class="m-mod">Commandes clients — ORDER / SEND / LIST_ORDER</span><span class="m-arr">→</span><span class="m-pat">Command + état</span></div>
+        <div class="row"><span class="m-mod">Contraintes de construction (5.1.2)</span><span class="m-arr">→</span><span class="m-pat">Builder + validation</span></div>
+      </div>
+      <hr class="rule">
+      <div class="grid g3">
+        <div class="card flat"><h3>≥ 2 déplacements</h3><p>impose exactement 2 générateurs — sinon le template est rejeté.</p></div>
+        <div class="card flat"><h3>Séparateur ;</h3><p>dès qu'une modification est présente, les drones sont séparés par <span class="tag">;</span> — le format initial reste accepté.</p></div>
+        <div class="card flat"><h3>Cycle de commande</h3><p>ORDER rend un id, SEND décrémente le reste, puis <span class="tag">COMPLETED</span>.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 · PATTERNS ÉCARTÉS -->
+  <section class="slide">
+    <span class="big-index">11</span>
+    <div class="inner">
+      <p class="eyebrow">Regard critique</p>
+      <h2>Patterns considérés puis écartés</h2>
+      <p class="lead" style="margin-top:.6rem">Le sujet valorise autant les choix retenus que ceux abandonnés.</p>
+      <div class="grid g2" style="margin-top:1.2rem">
+        <div class="card">
+          <span class="pill drop">écarté</span> <strong>Composite</strong> (arbre d'assemblage)
+          <p>La notation <span class="tag">[TMP2, Core{Sys}]</span> est un arbre… mais en nommant chaque intermédiaire <span class="tag">TMPk</span>, le Builder suffit. Composite aurait été de la structure non utilisée en sortie.</p>
+        </div>
+        <div class="card">
+          <span class="pill drop">écarté</span> <strong>Singleton</strong> (stock global)
+          <p>Tentant pour l'unicité du stock, mais nuit à la testabilité et masque les dépendances. Le stock est injecté par la <em>Factory</em>.</p>
+        </div>
+        <div class="card">
+          <span class="pill drop">écarté</span> <strong>Interpreter</strong> (grammaire ARGS)
+          <p>La grammaire WITH/WITHOUT/REPLACE est un mini-langage. Un vrai Interpreter serait sur-dimensionné : un parseur descendant à la main reste plus lisible.</p>
+        </div>
+        <div class="card">
+          <span class="pill keep">retenu léger</span> <strong>Registry / Factory</strong>
+          <p>Le <span class="tag">TemplateRegistry</span> et le catalogue de pièces jouent un rôle de fabrique/registre — assumé sans en faire un Abstract Factory formel.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 · DÉCISIONS -->
+  <section class="slide">
+    <span class="big-index">12</span>
+    <div class="inner">
+      <p class="eyebrow">Décisions & hypothèses</p>
+      <h2>Là où le sujet laissait le choix</h2>
+      <div class="grid g2" style="margin-top:1.2rem">
+        <div class="card flat"><h3>Catégorisation</h3><p>Les règles de type ne contraignent que coque / générateur / déplacement + système. Module principal et de contrôle sont <strong>non limitants</strong> (texte du sujet). Vérifié : les 4 drones connus tombent chacun dans leur catégorie.</p></div>
+        <div class="card flat"><h3>Compatibilité</h3><p>Sujet vague → règle explicite : le core doit couvrir les dimensions (2D/3D) du système ; le processeur partage ≥ 1 dimension avec le système. Documenté dans <span class="tag">Compatibility.cs</span>.</p></div>
+        <div class="card flat"><h3>Validation d'un drone modifié</h3><p>Validation <strong>complète</strong> (construction + compatibilité + catégorie), pas seulement les contraintes de construction : un drone modifié reste un vrai drone.</p></div>
+        <div class="card flat"><h3>Conventions de sortie</h3><p>Stock initial 5/pièce, 0/drone ; <span class="tag">TEMPLATE_ADDED</span>, <span class="tag">STOCK_UPDATED</span>, <span class="tag">ORDER-n</span> ; système via la notation <span class="tag">Core{System}</span>.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 · DÉMO -->
+  <section class="slide">
+    <span class="big-index">13</span>
+    <div class="inner">
+      <p class="eyebrow">Démonstration</p>
+      <h2>Le tout en action</h2>
+      <div class="grid g2" style="margin-top:1.1rem; align-items:start">
+        <div class="console" role="img" aria-label="Exemple d'instructions d'assemblage">
+          <div class="bar"><i></i><i></i><i></i> INSTRUCTIONS</div>
+          <pre>&gt; <span class="v">INSTRUCTIONS</span> 1 DXF-1
+
+<span class="k">PRODUCING</span> DXF-1
+<span class="k">GET_OUT_STOCK</span> 1 Hull_HF1
+<span class="p">[...]</span>
+<span class="k">INSTALL</span> System_S3D1 Core_C3D1
+<span class="k">ASSEMBLE</span> TMP1 Hull_HF1 Generator_GF1
+<span class="k">ASSEMBLE</span> TMP2 TMP1 Move_MF1
+<span class="k">ASSEMBLE</span> TMP3 TMP2 Core_C3D1{System_S3D1}
+<span class="k">ASSEMBLE</span> TMP4 TMP3 Processor_P3D1
+<span class="k">FINISHED</span> DXF-1</pre>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:14px">
+          <div class="console" role="img" aria-label="Modification et commande">
+            <div class="bar"><i></i><i></i><i></i> DECORATOR + ORDER</div>
+            <pre>&gt; <span class="v">VERIFY</span> 1 DXF-1 WITHOUT 1 Move_MF1
+<span class="k">ERROR</span> a drone needs at least one move module
+
+&gt; <span class="v">ORDER</span> 2 DXF-1, 1 RDL-1
+<span class="r">ORDER-1</span>
+&gt; <span class="v">SEND</span> ORDER-1, 1 DXF-1
+Remaining for ORDER-1 : 1 DXF-1, 1 RDL-1</pre>
+          </div>
+          <div class="console" role="img" aria-label="Traçabilité">
+            <div class="bar"><i></i><i></i><i></i> OBSERVER</div>
+            <pre>&gt; <span class="v">GET_MOVEMENTS</span> Hull_HF1
+<span class="r">+3</span> Hull_HF1 [RECEIVE]
+<span class="r">-1</span> Hull_HF1 [PRODUCE]</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14 · BILAN -->
+  <section class="slide">
+    <span class="big-index">14</span>
+    <div class="inner">
+      <p class="eyebrow">Bilan</p>
+      <h2>Ce que les patterns nous ont apporté</h2>
+      <div class="split" style="margin-top:1.2rem">
+        <div>
+          <ul class="clean">
+            <li><strong>Extensibilité</strong> — ajouter catégorie, instruction ou modification = ajouter une classe.</li>
+            <li><strong>Découplage</strong> — le stock ignore qui l'observe ; le REPL ignore les commandes.</li>
+            <li><strong>Lisibilité</strong> — chaque fichier a une responsabilité unique.</li>
+            <li><strong>Historique git</strong> — un commit par étape, patterns introduits progressivement.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Prochaine étape</h3>
+          <p><strong>Multi-usines (5.2.4)</strong> — <span class="tag">TRANSFER</span> et la précision <span class="tag">IN Usine</span> touchent toutes les instructions à stock. Piste : un pattern <strong>Façade / Médiateur</strong> par-dessus plusieurs <em>Factory</em>.</p>
+          <hr class="rule">
+          <p><strong>Bonus tests</strong> — les services (stock, validation, catégories) sont purs et injectés : prêts pour des tests unitaires.</p>
+        </div>
+      </div>
+      <p class="footer-note" style="margin-top:1.6rem">Merci — questions&nbsp;?</p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  (function () {
+    var deck = document.querySelector('.deck');
+    var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+    var now = document.querySelector('.c-now');
+    var total = document.querySelector('.c-total');
+    var bar = document.querySelector('.progress');
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var active = 0;
+    total.textContent = String(slides.length).padStart(2, '0');
+
+    function pad(n) { return String(n + 1).padStart(2, '0'); }
+    function render() {
+      now.textContent = pad(active);
+      bar.style.transform = 'scaleX(' + ((active + 1) / slides.length) + ')';
+    }
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { active = slides.indexOf(e.target); render(); }
+      });
+    }, { root: deck, threshold: 0.55 });
+    slides.forEach(function (s) { io.observe(s); });
+
+    function go(i) {
+      i = Math.max(0, Math.min(slides.length - 1, i));
+      slides[i].scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    document.querySelector('.next').addEventListener('click', function () { go(active + 1); });
+    document.querySelector('.prev').addEventListener('click', function () { go(active - 1); });
+
+    window.addEventListener('keydown', function (e) {
+      if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].indexOf(e.key) !== -1) { e.preventDefault(); go(active + 1); }
+      else if (['ArrowLeft', 'ArrowUp', 'PageUp'].indexOf(e.key) !== -1) { e.preventDefault(); go(active - 1); }
+      else if (e.key === 'Home') { e.preventDefault(); go(0); }
+      else if (e.key === 'End') { e.preventDefault(); go(slides.length - 1); }
+    });
+
+    render();
+  })();
+</script>
